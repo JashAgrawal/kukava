@@ -1,0 +1,132 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Cancel superseded runs on the same ref so a branch does not queue up builds.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: '1'
+
+jobs:
+  verify:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+  coverage:
+    name: Test coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run tests with coverage
+        run: npm run test:coverage
+
+      - name: Enforce coverage floor
+        run: node scripts/check-coverage.mjs
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  docker:
+    name: Docker image builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: verify
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          load: true
+          tags: kukava:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test the container
+        run: |
+          docker run -d --name kukava -p 3000:3000 kukava:ci
+          # Poll the port rather than sleeping a fixed amount, so the check is
+          # as fast as the app is actually ready.
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://localhost:3000/ > /dev/null; then
+              echo "App responded after ${attempt} attempt(s)"
+              break
+            fi
+            if [ "$attempt" -eq 30 ]; then
+              echo "App never became healthy"
+              docker logs kukava
+              exit 1
+            fi
+            sleep 2
+          done
+          curl -fsS http://localhost:3000/ | grep -q 'Gemini Chat'
+          # The runtime image must carry no sources and no dev-only tooling.
+          docker run --rm kukava:ci sh -c '
+            test ! -d /app/components &&
+            test ! -d /app/stores &&
+            test ! -d /app/lib &&
+            test ! -f /app/vitest.config.ts &&
+            test ! -f /app/Dockerfile &&
+            ! test -d /app/node_modules/.bin/eslint &&
+            ! test -d /app/node_modules/vitest
+          '
+
+      - name: Container logs on failure
+        if: failure()
+        run: docker logs kukava
+
+      - name: Clean up
+        if: always()
+        run: docker rm -f kukava || true
