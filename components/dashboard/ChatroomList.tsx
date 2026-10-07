@@ -5,6 +5,7 @@ import { Search, Plus, Trash2, MessageCircle, MoreVertical } from 'lucide-react'
 import { Chatroom } from '@/types';
 import { formatChatroomTime, truncateText, cn } from '@/lib/utils';
 import { useUIStore } from '@/stores/uiStore';
+import { logger } from '@/lib/logger';
 
 interface ChatroomListProps {
   chatrooms: Chatroom[];
@@ -62,13 +63,10 @@ export function ChatroomList({
       })
     : chatrooms;
 
-  // Debug logging
-  console.log('Search Debug:', {
-    searchQuery,
-    effectiveSearchQuery,
+  logger.debug('chatroom_list.filtered', {
+    searchQuery: effectiveSearchQuery,
     totalChatrooms: chatrooms.length,
     filteredCount: filteredChatrooms.length,
-    chatroomTitles: chatrooms.map(c => c.title)
   });
 
   return (

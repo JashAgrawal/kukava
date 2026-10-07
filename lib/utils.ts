@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { describeError, logger } from "@/lib/logger";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -78,7 +79,7 @@ export async function copyToClipboard(text: string): Promise<boolean> {
       return result;
     }
   } catch (error) {
-    console.error('Failed to copy text:', error);
+    logger.warn('clipboard.copy_failed', describeError(error));
     return false;
   }
 }

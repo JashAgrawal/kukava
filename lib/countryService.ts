@@ -1,4 +1,5 @@
 import { Country, CountryApiResponse } from '@/types';
+import { describeError, logger } from '@/lib/logger';
 
 const COUNTRIES_API_URL = 'https://restcountries.com/v3.1/all?fields=name,cca2,cca3,idd,flag';
 
@@ -60,7 +61,7 @@ export async function fetchCountries(): Promise<Country[]> {
     countriesCache = countries;
     return countries;
   } catch (error) {
-    console.error('Error fetching countries:', error);
+    logger.warn('countries.fetch_failed', describeError(error));
     
     // Return fallback data if API fails
     return getFallbackCountries();

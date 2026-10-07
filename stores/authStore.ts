@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AuthState, User, LoginFormData, OTPFormData } from '@/types';
+import { logger } from '@/lib/logger';
 
 interface AuthStore extends AuthState {
   login: (data: LoginFormData) => Promise<void>;
@@ -27,7 +28,7 @@ const simulateOTPSend = async (phoneData: LoginFormData): Promise<void> => {
     setTimeout(() => {
       currentOTP = generateOTP();
       currentPhoneData = phoneData;
-      console.log(`🔐 Simulated OTP sent to ${phoneData.countryCode}${phoneData.phoneNumber}: ${currentOTP}`);
+      logger.info('auth.otp_sent', { countryCode: phoneData.countryCode });
       resolve();
     }, 1000);
   });
