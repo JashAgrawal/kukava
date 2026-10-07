@@ -97,6 +97,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
           <div className="relative">
             <input
               {...register('phoneNumber')}
+              id="phoneNumber"
               type="tel"
               placeholder="Enter your phone number"
               onChange={handlePhoneNumberChange}

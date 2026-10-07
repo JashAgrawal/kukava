@@ -5,15 +5,24 @@ import { ChevronDown, Search, Check } from 'lucide-react';
 import { Country } from '@/types';
 import { fetchCountries, getCountryDialCode, searchCountries } from '@/lib/countryService';
 import { cn } from '@/lib/utils';
+import { captureException } from '@/lib/errorTracking';
 
 interface CountrySelectorProps {
+  /** Must match the id of the associated <label htmlFor>. */
+  id?: string;
   value: string;
   onChange: (countryCode: string) => void;
   error?: string;
   disabled?: boolean;
 }
 
-export function CountrySelector({ value, onChange, error, disabled }: CountrySelectorProps) {
+export function CountrySelector({
+  id = 'countryCode',
+  value,
+  onChange,
+  error,
+  disabled,
+}: CountrySelectorProps) {
   const [countries, setCountries] = useState<Country[]>([]);
   const [filteredCountries, setFilteredCountries] = useState<Country[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -47,7 +56,7 @@ export function CountrySelector({ value, onChange, error, disabled }: CountrySel
           setSelectedCountry(selected || null);
         }
       } catch (error) {
-        console.error('Failed to load countries:', error);
+        captureException(error, 'Failed to load countries');
       } finally {
         setIsLoading(false);
       }
@@ -108,10 +117,16 @@ export function CountrySelector({ value, onChange, error, disabled }: CountrySel
   if (isLoading) {
     return (
       <div className="relative">
-        <div className={cn(
-          "flex items-center justify-between w-full px-3 py-2 text-sm border rounded-md",
-          "bg-muted border-input text-muted-foreground cursor-not-allowed"
-        )}>
+        <div
+          id={id}
+          role="status"
+          aria-busy="true"
+          aria-label="Country"
+          className={cn(
+            "flex items-center justify-between w-full px-3 py-2 text-sm border rounded-md",
+            "bg-muted border-input text-muted-foreground cursor-not-allowed"
+          )}
+        >
           <span>Loading countries...</span>
           <ChevronDown className="w-4 h-4" />
         </div>
@@ -122,7 +137,12 @@ export function CountrySelector({ value, onChange, error, disabled }: CountrySel
   return (
     <div className="relative" ref={dropdownRef}>
       <button
+        id={id}
         type="button"
+        role="combobox"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? `${id}-listbox` : undefined}
         onClick={handleToggleDropdown}
         disabled={disabled}
         className={cn(
@@ -160,8 +180,10 @@ export function CountrySelector({ value, onChange, error, disabled }: CountrySel
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <input
                 ref={searchInputRef}
+                id={`${id}-search`}
                 type="text"
                 placeholder="Search countries..."
+                aria-label="Search countries"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-sm border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent bg-background"
@@ -170,7 +192,12 @@ export function CountrySelector({ value, onChange, error, disabled }: CountrySel
           </div>
 
           {/* Countries list */}
-          <div className="overflow-y-auto max-h-48">
+          <div
+            id={`${id}-listbox`}
+            role="listbox"
+            aria-label="Countries"
+            className="overflow-y-auto max-h-48"
+          >
             {filteredCountries.length > 0 ? (
               filteredCountries.map((country) => {
                 const dialCode = getCountryDialCode(country);
@@ -180,6 +207,8 @@ export function CountrySelector({ value, onChange, error, disabled }: CountrySel
                   <button
                     key={country.cca2}
                     type="button"
+                    role="option"
+                    aria-selected={isSelected}
                     onClick={() => handleCountrySelect(country)}
                     className={cn(
                       "w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-accent transition-colors",
