@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/authStore';
 import { useUIStore } from '@/stores/uiStore';
+import { AppErrorBoundary } from './ErrorBoundary';
 import { AuthPage } from './auth/AuthPage';
 import { Dashboard } from './dashboard/Dashboard';
 import { ToastContainer } from './ui/Toast';
@@ -79,24 +80,26 @@ export function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Main App Content */}
-      {user?.isAuthenticated ? (
-        <Dashboard />
-      ) : (
-        <AuthPage />
-      )}
+    <AppErrorBoundary>
+      <div className="min-h-screen bg-background">
+        {/* Main App Content */}
+        {user?.isAuthenticated ? (
+          <Dashboard />
+        ) : (
+          <AuthPage />
+        )}
 
-      {/* Toast Notifications */}
-      <ToastContainer />
+        {/* Toast Notifications */}
+        <ToastContainer />
 
-      {/* Accessibility Announcements */}
-      <div
-        id="accessibility-announcements"
-        className="sr-only"
-        aria-live="polite"
-        aria-atomic="true"
-      />
-    </div>
+        {/* Accessibility Announcements */}
+        <div
+          id="accessibility-announcements"
+          className="sr-only"
+          aria-live="polite"
+          aria-atomic="true"
+        />
+      </div>
+    </AppErrorBoundary>
   );
 }
