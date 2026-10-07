@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Loader2, MessageCircle } from 'lucide-react';
 import { CreateChatroomFormData } from '@/lib/validations';
 import { cn } from '@/lib/utils';
+import { captureException } from '@/lib/errorTracking';
 
 interface CreateChatroomModalProps {
   isOpen: boolean;
@@ -71,7 +72,7 @@ export function CreateChatroomModal({
       await onSubmit({ title: title.trim() });
       handleClose();
     } catch (error) {
-      console.error('Form submission error:', error);
+      captureException(error, 'Chatroom creation failed', { title });
     }
   };
 
@@ -82,6 +83,16 @@ export function CreateChatroomModal({
     setTouched(false);
     onClose();
   }, [onClose]);
+
+  // Reset when the parent closes the modal directly, so a draft never survives
+  // into the next time it opens.
+  useEffect(() => {
+    if (!isOpen) {
+      setTitle('');
+      setError('');
+      setTouched(false);
+    }
+  }, [isOpen]);
 
   // Focus input when modal opens
   useEffect(() => {
@@ -156,6 +167,8 @@ export function CreateChatroomModal({
               </label>
               <input
                 ref={inputRef}
+                id="title"
+                name="title"
                 type="text"
                 value={title}
                 onChange={handleInputChange}

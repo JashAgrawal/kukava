@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { MessageFormData } from '@/lib/validations';
+import { captureException } from '@/lib/errorTracking';
+import { logger } from '@/lib/logger';
 
 /**
  * Example usage of the enhanced ChatInput component
@@ -31,15 +33,15 @@ export function ChatInputExample() {
         timestamp: new Date(),
       }]);
       
-      console.log('Message sent:', {
-        content: data.content,
+      logger.info('example.message_sent', {
+        contentLength: data.content.length,
         hasImage: !!data.image,
         imageSize: data.image ? data.image.size : 0,
         imageName: data.image ? data.image.name : null,
       });
       
     } catch (error) {
-      console.error('Failed to send message:', error);
+      captureException(error, 'Example message failed');
       throw error; // Re-throw to let ChatInput handle the error display
     } finally {
       setIsLoading(false);
@@ -134,7 +136,7 @@ export function ChatInputExample() {
           <p>• Type more than 1000 characters (visual feedback)</p>
           <p>• Try uploading a non-image file (should be rejected)</p>
           <p>• Try uploading a file larger than 5MB (should be rejected)</p>
-          <p>• Try entering script tags like &lt;script&gt;alert('test')&lt;/script&gt; (should be blocked)</p>
+          <p>• Try entering script tags like &lt;script&gt;alert(&apos;test&apos;)&lt;/script&gt; (should be blocked)</p>
         </div>
       </div>
 

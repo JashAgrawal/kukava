@@ -123,6 +123,8 @@ export function Dashboard() {
             <div className="flex items-center space-x-3">
               <button
                 onClick={toggleSidebar}
+                aria-label={sidebarOpen ? 'Close sidebar' : 'Open sidebar'}
+                aria-expanded={sidebarOpen}
                 className="p-2 text-muted-foreground hover:text-foreground hover:bg-accent rounded-md transition-colors"
               >
                 <Menu className="w-5 h-5" />
@@ -171,6 +173,7 @@ export function Dashboard() {
                 </span>
                 <button
                   onClick={handleLogout}
+                  aria-label="Log out"
                   className="p-1 text-muted-foreground hover:text-destructive rounded transition-colors"
                   title="Logout"
                 >
