@@ -19,7 +19,7 @@ export function TypingIndicator() {
           <span className="text-sm font-medium text-foreground">
             Gemini
           </span>
-          <span className="text-xs text-muted-foreground animate-pulse">
+          <span className="text-xs text-muted-foreground animate-pulse" role="status" aria-live="polite">
             is typing...
           </span>
         </div>

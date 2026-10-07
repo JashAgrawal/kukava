@@ -10,6 +10,8 @@ import { TypingIndicator } from './TypingIndicator';
 import { ChatInput } from './ChatInput';
 import { MessageFormData } from '@/lib/validations';
 import { scrollToBottom, isAtBottom } from '@/lib/utils';
+import { logger } from '@/lib/logger';
+import { captureException } from '@/lib/errorTracking';
 
 interface ChatInterfaceProps {
   chatroom: Chatroom;
@@ -65,7 +67,12 @@ export function ChatInterface({ chatroom }: ChatInterfaceProps) {
       lastMessageCountRef.current = 0;
       setShouldAutoScroll(true);
       setTimeout(() => {
-        scrollToBottom(messagesContainerRef.current!, false);
+        // The container is gone if the user switched chats or left unmounted
+        // during the delay, so the ref is re-read rather than captured.
+        const container = messagesContainerRef.current;
+        if (container) {
+          scrollToBottom(container, false);
+        }
       }, 100);
     }
   }, [chatroom]);
@@ -100,13 +107,12 @@ export function ChatInterface({ chatroom }: ChatInterfaceProps) {
 
         // Load more messages when near top with proper conditions
         if (isNearTop && hasMoreMessages && !isMessagesLoading && hasContent) {
-          console.log('🔄 Triggering infinite scroll load...', {
+          logger.debug('infinite_scroll.triggered', {
             scrollTop,
             scrollThreshold,
             hasMoreMessages,
             isMessagesLoading,
             messageCount: chatroomMessages.length,
-            timestamp: new Date().toISOString()
           });
 
           // WhatsApp-style: Remember scroll position for restoration
@@ -129,19 +135,17 @@ export function ChatInterface({ chatroom }: ChatInterfaceProps) {
                     const newScrollTop = scrollTopBefore + heightDifference;
                     container.scrollTop = newScrollTop;
 
-                    console.log('✅ Scroll position restored:', {
+                    logger.debug('infinite_scroll.position_restored', {
                       scrollHeightBefore,
                       scrollHeightAfter,
                       heightDifference,
                       scrollTopBefore,
                       newScrollTop: container.scrollTop,
-                      timestamp: new Date().toISOString()
                     });
                   } else {
-                    console.warn('⚠️ No height difference detected after loading messages', {
+                    logger.warn('infinite_scroll.no_height_change', {
                       scrollHeightBefore,
                       scrollHeightAfter,
-                      timestamp: new Date().toISOString()
                     });
                   }
                 }
@@ -149,13 +153,11 @@ export function ChatInterface({ chatroom }: ChatInterfaceProps) {
             });
 
           } catch (error) {
-            console.error('❌ Failed to load more messages:', {
-              error,
+            captureException(error, 'Failed to load more messages', {
               scrollTop,
               hasMoreMessages,
               isMessagesLoading,
               messageCount: chatroomMessages.length,
-              timestamp: new Date().toISOString()
             });
             showToast({
               type: 'error',
@@ -165,11 +167,11 @@ export function ChatInterface({ chatroom }: ChatInterfaceProps) {
         } else {
           // Log why infinite scroll didn't trigger
           if (isNearTop && !hasMoreMessages) {
-            console.log('📄 No more messages to load');
+            logger.debug('infinite_scroll.no_more_pages');
           } else if (isNearTop && isMessagesLoading) {
-            console.log('⏳ Already loading messages, skipping...');
+            logger.debug('infinite_scroll.already_loading');
           } else if (isNearTop && !hasContent) {
-            console.log('📭 No messages in current chatroom yet');
+            logger.debug('infinite_scroll.empty_chatroom');
           }
         }
       }, 150); // Increased debounce for better performance
