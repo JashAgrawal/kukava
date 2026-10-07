@@ -438,7 +438,7 @@ export function ChatInput({
               id="char-count"
               className="absolute bottom-1 right-10 sm:right-12 text-xs text-muted-foreground"
             >
-              {/* <span
+              <span
                 className={cn(
                   "max-md:hidden",
                   contentLength > maxLength * 0.9 && 'text-yellow-600 dark:text-yellow-400',
@@ -446,7 +446,7 @@ export function ChatInput({
                 )}
               >
                 {contentLength}/{maxLength}
-              </span> */}
+              </span>
             </div>
 
             {/* Image button */}
@@ -484,6 +484,7 @@ export function ChatInput({
           <button
             type="submit"
             disabled={!canSubmit}
+            aria-label="Send message"
             className={cn(
               // Responsive sizing and touch-friendly design
               'p-2 sm:p-2.5 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2',
