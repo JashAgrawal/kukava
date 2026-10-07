@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -17,7 +17,15 @@ export const metadata: Metadata = {
   description: "A modern chat application powered by Gemini AI. Experience intelligent conversations with advanced features like image sharing, real-time messaging, and intuitive design.",
   keywords: ["AI", "Chat", "Gemini", "Conversation", "Assistant", "Messaging"],
   authors: [{ name: "Gemini Chat Team" }],
-  viewport: "width=device-width, initial-scale=1",
+};
+
+// Next.js 15 requires viewport to be its own export; declaring it inside
+// `metadata` is ignored and warned about at build time.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // The composer sits above the iOS home indicator, so the safe area matters.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
